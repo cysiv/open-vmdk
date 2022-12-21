@@ -77,7 +77,7 @@ for vmdk in $vmdks; do
 
    vmdk_file_size=$(du -b $TMPDIR/"${vmdk_name}" | cut -f1)
    echo "$vmdk file size is $vmdk_file_size bytes"
-   vmdk_capacity=$(vmdk-convert -i "$vmdk" | cut -d ',' -f 1 | awk '{print $NF}')
+   vmdk_capacity=$(qemu-img info "$vmdk" --output json | jq -r '."format-specific".data.extents[0]."virtual-size"')
    echo "$vmdk capacity is $vmdk_capacity bytes"
 
    if [ $index -eq 1 ]; then
