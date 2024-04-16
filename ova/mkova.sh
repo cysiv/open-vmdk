@@ -17,8 +17,8 @@
 
 TMPDIR=$(mktemp -p . -d XXXXXXXX)
 
-[ ! -n "$NUM_CPUS" ] && NUM_CPUS=2
-[ ! -n "$MEM_SIZE" ] && MEM_SIZE=1024
+[ ! -n "$NUM_CPUS" ] && NUM_CPUS=4
+[ ! -n "$MEM_SIZE" ] && MEM_SIZE=8192
 
 if [ "$#" -lt 3 ] ; then
     echo "$#"
@@ -75,16 +75,16 @@ for vmdk in $vmdks; do
    echo "Adding $vmdk as ${vmdk_name}"
    cp "$vmdk" $TMPDIR/"${vmdk_name}"
 
-   vmdk_file_size=$(du -b $TMPDIR/"${vmdk_name}" | cut -f1)
+   vmdk_file_size=$(wc -c $TMPDIR/"${vmdk_name}" | awk '{print $1}')
    echo "$vmdk file size is $vmdk_file_size bytes"
-   vmdk_capacity=$(qemu-img info "$vmdk" --output json | jq -r '."format-specific".data.extents[0]."virtual-size"')
-   echo "$vmdk capacity is $vmdk_capacity bytes"
+   [ ! -n "$DISK_SIZE" ] && DISK_SIZE=$(qemu-img info "$vmdk" --output json | jq -r '."format-specific".data.extents[0]."virtual-size"')
+   echo "Disk size will be $DISK_SIZE bytes"
 
    if [ $index -eq 1 ]; then
       sed ${ovftempl} \
           -e "s/@@NAME@@/${name}/g" \
           -e "s/@@VMDK_FILE_SIZE@@/$vmdk_file_size/g" \
-          -e "s/@@VMDK_CAPACITY@@/$vmdk_capacity/g" \
+          -e "s/@@VMDK_CAPACITY@@/$DISK_SIZE/g" \
           -e "s/@@NUM_CPUS@@/$NUM_CPUS/g" \
           -e "s/@@MEM_SIZE@@/$MEM_SIZE/g" \
           > $TMPDIR/${name}.ovf
